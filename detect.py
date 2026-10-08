@@ -93,20 +93,28 @@ def main():
 
     if is_webcam:
         print("Press 'q' to quit webcam view.")
+        cap = cv2.VideoCapture(source)
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
 
-    results = model.predict(
-        source=source,
-        conf=args.conf,
-        show=False,
-        save=args.save,
-        project=str(RUNS_DIR / "detect") if args.save else None,
-        name="predict" if args.save else None,
-        stream=is_webcam,
-    )
+            # Center crop to middle 60% to cut out background noise
+            h, w = frame.shape[:2]
+            crop_ratio = 0.6
+            x_off = int(w * (1 - crop_ratio) / 2)
+            y_off = int(h * (1 - crop_ratio) / 2)
+            cropped = frame[y_off:h - y_off, x_off:w - x_off]
 
-    if is_webcam or (isinstance(source, str) and source.endswith((".mp4", ".avi", ".mov"))):
-        for result in results:
-            frame = result.orig_img
+            results = model.predict(
+                source=cropped,
+                conf=args.conf,
+                show=False,
+                save=False,
+                stream=False,
+                verbose=False,
+            )
+            result = results[0]
             boxes = result.boxes
             if len(boxes) > 0:
                 best_idx = int(boxes.conf.argmax())
@@ -115,15 +123,24 @@ def main():
                 cls_id = int(best_box.cls[0])
                 conf = float(best_box.conf[0])
                 label = f"{result.names[cls_id]} {conf:.2f}"
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(frame, label, (x1, y1 - 10),
+                cv2.rectangle(cropped, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(cropped, label, (x1, y1 - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
             if show:
-                cv2.imshow("ASL Detection", frame)
+                cv2.imshow("ASL Detection", cropped)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
+        cap.release()
         cv2.destroyAllWindows()
     else:
+        results = model.predict(
+            source=source,
+            conf=args.conf,
+            show=False,
+            save=args.save,
+            project=str(RUNS_DIR / "detect") if args.save else None,
+            name="predict" if args.save else None,
+        )
         for result in results:
             boxes = result.boxes
             if len(boxes) > 0:

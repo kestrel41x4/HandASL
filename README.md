@@ -4,31 +4,24 @@ Detect American Sign Language (ASL) hand signs in real-time using YOLO object de
 
 ## Quick Start
 
-### 1. Create virtual environment
+### 1. Install uv
 
-```bash
-py -3.12 -m venv venv
-venv\Scripts\activate
-pip install --upgrade pip
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-### 2. (Optional) Install PyTorch with GPU support
+(Or see the [uv installation docs](https://docs.astral.sh/uv/getting-started/installation/).)
 
-If you have an NVIDIA GPU:
+### 2. Install dependencies
 
-```bash
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-```
-
-Skip this step for CPU-only training.
-
-### 3. Install dependencies
+uv creates `.venv/` and installs Python 3.12 if needed. Pick a PyTorch build:
 
 ```bash
-pip install -r requirements.txt
+uv sync --extra cpu      # CPU only
+uv sync --extra cu128    # NVIDIA GPU (CUDA 12.8)
 ```
 
-### 4. Set up Roboflow API key
+### 3. Set up Roboflow API key
 
 1. Create a free account at [roboflow.com](https://roboflow.com)
 2. Get your API key from [Settings > API Keys](https://app.roboflow.com/settings/api-keys)
@@ -38,31 +31,31 @@ pip install -r requirements.txt
 ROBOFLOW_API_KEY=your_api_key_here
 ```
 
-### 5. Download the dataset
+### 4. Download the dataset
 
 ```bash
-python download_dataset.py
+uv run download_dataset.py
 ```
 
-### 6. Train the model
+### 5. Train the model
 
 ```bash
-python train.py
+uv run train.py
 ```
 
 Custom settings:
 
 ```bash
-python train.py --epochs 100 --batch -1 --model yolov8s.pt
+uv run train.py --epochs 100 --batch -1 --model yolov8s.pt
 ```
 
-### 7. Run inference
+### 6. Run inference
 
 ```bash
-python detect.py                          # Webcam (default)
-python detect.py --source image.jpg       # Single image
-python detect.py --source video.mp4       # Video file
-python detect.py --source 0 --save        # Webcam with saved output
+uv run detect.py                          # Webcam (default)
+uv run detect.py --source image.jpg       # Single image
+uv run detect.py --source video.mp4       # Video file
+uv run detect.py --source 0 --save        # Webcam with saved output
 ```
 
 ## Project Structure
@@ -74,7 +67,8 @@ HandASL/
 ├── train.py            # Model training script
 ├── detect.py           # Inference/prediction script
 ├── download_dataset.py # Dataset download from Roboflow
-├── requirements.txt    # Python dependencies
+├── pyproject.toml      # Dependencies (managed by uv)
+├── uv.lock             # Locked dependency versions
 ├── .env                # API key (create manually, not in git)
 ├── .gitignore          # Git ignore rules
 └── README.md           # This file
